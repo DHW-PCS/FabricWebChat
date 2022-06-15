@@ -33,7 +33,7 @@ public class SessionManager {
 
     public void broadcast(UUID sender, BaseText text) {
         sessions.forEach(session -> {
-            if(session.getState() == SessionState.ESTABLISHED) {
+            if(session.getState() == ConnectionState.ESTABLISHED) {
                 session.pushMessage(sender, text);
             }
         });

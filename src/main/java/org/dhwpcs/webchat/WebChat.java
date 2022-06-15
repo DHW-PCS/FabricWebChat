@@ -21,6 +21,7 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import net.minecraft.server.MinecraftServer;
 import org.dhwpcs.webchat.network.PacketCodec;
 import org.dhwpcs.webchat.session.ChatSession;
+import org.dhwpcs.webchat.session.ClientConnection;
 import org.dhwpcs.webchat.session.SessionManager;
 
 import java.io.IOException;
@@ -66,7 +67,7 @@ public class WebChat {
                 pipeline.addLast("websocket-handler", new WebSocketServerProtocolHandler("/chat/backend"));
                 pipeline.addLast("websocket-aggregator", new WebSocketFrameAggregator(65536));
                 pipeline.addLast("packet-codec", PacketCodec.INSTANCE);
-                pipeline.addLast("session-handler", new ChatSession());
+                pipeline.addLast("connection-handler", new ClientConnection());
             }
         }).bind(80).syncUninterruptibly().channel();
 
