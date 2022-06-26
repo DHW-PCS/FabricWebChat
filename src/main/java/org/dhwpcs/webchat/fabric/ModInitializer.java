@@ -1,4 +1,4 @@
-package org.dhwpcs.webchat;
+package org.dhwpcs.webchat.fabric;
 
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;

@@ -3,10 +3,15 @@ package org.dhwpcs.webchat.network.protocol.v1r0;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.dhwpcs.webchat.network.exception.NetworkException;
+import org.dhwpcs.webchat.network.protocol.invoker.ClientNetworkInvoker;
+import org.dhwpcs.webchat.network.protocol.invoker.ServerNetworkInvoker;
 import org.dhwpcs.webchat.network.protocol.packet.InboundPacket;
 import org.dhwpcs.webchat.network.protocol.packet.OutboundPacket;
 import org.dhwpcs.webchat.network.protocol.packet.Packet;
 import org.dhwpcs.webchat.network.protocol.ProtocolBase;
+import org.dhwpcs.webchat.network.protocol.v1r0.invoker.ClientInvokerV1R0;
+import org.dhwpcs.webchat.network.protocol.v1r0.invoker.ServerInvokerV1R0;
+import org.dhwpcs.webchat.session.ClientConnection;
 
 public class ProtocolV1R0 extends ProtocolBase {
     @Override
@@ -39,5 +44,15 @@ public class ProtocolV1R0 extends ProtocolBase {
             }
         }
         throw new NetworkException("Not supported packet format: "+je.toString());
+    }
+
+    @Override
+    public ClientNetworkInvoker createClientInvoker(ClientConnection connection) {
+        return new ClientInvokerV1R0().bindConnection(connection);
+    }
+
+    @Override
+    public ServerNetworkInvoker createServerInvoker(ClientConnection connection) {
+        return new ServerInvokerV1R0().bindConnection(connection);
     }
 }

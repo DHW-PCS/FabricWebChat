@@ -3,58 +3,47 @@ package org.dhwpcs.webchat.session;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import org.dhwpcs.webchat.network.handler.PacketHandler;
-import org.dhwpcs.webchat.network.handler.ServerAuthPacketHandler;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
+import org.dhwpcs.webchat.network.protocol.Protocol;
+import org.dhwpcs.webchat.network.protocol.invoker.ClientNetworkInvoker;
+import org.dhwpcs.webchat.network.protocol.invoker.ServerNetworkInvoker;
 import org.dhwpcs.webchat.network.protocol.packet.InboundPacket;
 import org.dhwpcs.webchat.network.protocol.packet.OutboundPacket;
-
-import java.util.LinkedList;
-import java.util.List;
 
 public class ClientConnection extends SimpleChannelInboundHandler<InboundPacket> {
     private ChatSession session;
     private Channel channel;
     private ConnectionState state;
-    private PacketHandler handler;
-    private boolean writable = false;
-    private List<OutboundPacket> traffic = new LinkedList<>();
+    private ClientNetworkInvoker client;
+    private ServerNetworkInvoker server;
+
+    public void setProtocol(Protocol proto) {
+        client = proto.createClientInvoker(this);
+        server = proto.createServerInvoker(this);
+    }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         channel = ctx.channel();
-        handler = new ServerAuthPacketHandler(this);
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         channel = null;
-        handler.disconnect();
     }
 
-    @Override
-    public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
-        writable = ctx.channel().isWritable();
+    public void sendPacket(OutboundPacket packet, GenericFutureListener<? extends Future<? super Void>> listener) {
+        channel.writeAndFlush(packet).addListener(listener);
     }
 
     public void sendPacket(OutboundPacket packet) {
-        if(!writable) {
-            traffic.add(packet);
-        } else channel.eventLoop().execute(() -> this.writeOrCache(packet));
-    }
-
-    private void writeOrCache(OutboundPacket packet) {
-        if(channel.eventLoop().inEventLoop()) {
-            if(channel.isWritable()) {
-                channel.writeAndFlush(packet);
-            } else {
-                traffic.add(packet);
-            }
-        }
+        channel.writeAndFlush(packet);
     }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, InboundPacket inbound) throws Exception {
-        inbound.handle(handler);
+        inbound.handle(client);
     }
 
     public ConnectionState getState() {
@@ -69,24 +58,15 @@ public class ClientConnection extends SimpleChannelInboundHandler<InboundPacket>
         return session;
     }
 
-    public void bindSession(ChatSession session) {
+    public void setSession(ChatSession session) {
         this.session = session;
-        this.state = ConnectionState.ESTABLISHED;
     }
 
-    public void unbind() {
-        if(this.session != null) {
-            this.session.disconnect();
-            this.session = null;
-            this.state = ConnectionState.NOT_AUTHENTICATED;
-        }
+    public ServerNetworkInvoker serverInvoker() {
+        return server;
     }
 
-    public void halt() {
-        if(this.session != null) {
-            this.state = ConnectionState.WAIT;
-        } else {
-            this.state = ConnectionState.TERMINATED;
-        }
+    public Channel getChannel() {
+        return channel;
     }
 }

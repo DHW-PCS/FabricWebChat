@@ -1,8 +1,6 @@
 package org.dhwpcs.webchat;
 
-import com.mojang.authlib.*;
-import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
-import com.mojang.authlib.yggdrasil.YggdrasilEnvironment;
+import com.google.common.base.Preconditions;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -19,22 +17,17 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import net.minecraft.server.MinecraftServer;
+import org.checkerframework.checker.units.qual.C;
+import org.dhwpcs.webchat.network.Handshaker;
 import org.dhwpcs.webchat.network.PacketCodec;
-import org.dhwpcs.webchat.session.ChatSession;
 import org.dhwpcs.webchat.session.ClientConnection;
 import org.dhwpcs.webchat.session.SessionManager;
 
 import java.io.IOException;
-import java.net.Proxy;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class WebChat {
-
-    private final Environment yggdrasilEnv = YggdrasilEnvironment.PROD.getEnvironment();
-    private final AuthenticationService yggdrasilAuth = new YggdrasilAuthenticationService(Proxy.NO_PROXY);
-    private final GameProfileRepository yggdrasilRepo = yggdrasilAuth.createProfileRepository();
-    private final UserAuthentication yggdrasilUser = yggdrasilAuth.createUserAuthentication(Agent.MINECRAFT);
 
     private final MinecraftServer mcServer;
 
@@ -43,7 +36,6 @@ public class WebChat {
     private Channel httpServer;
 
     private final SessionManager sessions = new SessionManager(this);
-
     public WebChat(MinecraftServer server) throws IOException {
         this.mcServer = server;
     }
@@ -60,17 +52,27 @@ public class WebChat {
             @Override
             protected void initChannel(ServerSocketChannel channel) throws Exception {
                 ChannelPipeline pipeline = channel.pipeline();
+                ClientConnection connection = new ClientConnection();
+                PacketCodec codec = new PacketCodec();
+                Handshaker handshaker = new Handshaker(codec, connection);
                 pipeline.addLast("http-codec", new HttpServerCodec());
                 pipeline.addLast("chunked-write", new ChunkedWriteHandler());
                 pipeline.addLast("aggregator", new HttpObjectAggregator(65536));
                 pipeline.addLast("log-handler", new LoggingHandler(LogLevel.DEBUG));
                 pipeline.addLast("websocket-handler", new WebSocketServerProtocolHandler("/chat/backend"));
                 pipeline.addLast("websocket-aggregator", new WebSocketFrameAggregator(65536));
-                pipeline.addLast("packet-codec", PacketCodec.INSTANCE);
-                pipeline.addLast("connection-handler", new ClientConnection());
+                pipeline.addLast("handshaker", handshaker);
+                pipeline.addLast("packet-codec", codec);
+                pipeline.addLast("connection-handler", connection);
             }
         }).bind(80).syncUninterruptibly().channel();
 
         available = true;
+    }
+
+    public void stop() throws InterruptedException {
+        Preconditions.checkState(available);
+        sessions.terminate();
+        httpServer.close().sync();
     }
 }

@@ -1,35 +1,38 @@
 package org.dhwpcs.webchat.network;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
+import org.dhwpcs.webchat.network.protocol.Protocol;
+import org.dhwpcs.webchat.network.protocol.packet.OutboundPacket;
 import org.dhwpcs.webchat.network.protocol.packet.Packet;
-import org.dhwpcs.webchat.network.protocol.v1r0.ProtocolV1R0;
 
 import java.util.List;
-
-
 public class PacketCodec extends MessageToMessageCodec<WebSocketFrame, Packet> {
-    private final Validator validator = new Validator();
 
-    public static final PacketCodec INSTANCE = new PacketCodec();
+    private Protocol protocol;
 
-    private PacketCodec() {
-        validator.register("1.0", ProtocolV1R0::new);
+    public void setProtocol(Protocol protocol) {
+        this.protocol = protocol;
     }
 
     @Override
-    protected void encode(ChannelHandlerContext channelHandlerContext, Packet packet, List<Object> list) throws Exception {
+    protected void encode(ChannelHandlerContext ctx, Packet packet, List<Object> list) throws Exception {
+        if(packet instanceof OutboundPacket outbound) {
 
+        }
     }
 
     @Override
-    protected void decode(ChannelHandlerContext channelHandlerContext, WebSocketFrame webSocketFrame, List<Object> list) throws Exception {
-
+    protected void decode(ChannelHandlerContext ctx, WebSocketFrame frame, List<Object> list) throws Exception {
+        if(frame instanceof TextWebSocketFrame txt) {
+            String content = txt.text();
+            JsonElement je = JsonParser.parseString(content);
+            list.add(protocol.deserialize(je));
+        }
     }
 
-    @Override
-    public boolean isSharable() {
-        return true;
-    }
 }

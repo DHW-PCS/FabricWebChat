@@ -20,26 +20,30 @@ public class SessionManager {
         sessions.add(session);
     }
 
-    public void removeSession(ChatSession session) {
+    public void discardSession(ChatSession session, DisconnectReason reason) {
         session.setManager(null);
+        session.discard(reason);
         sessions.remove(session);
     }
 
     public ChatSession acquireSession(UUID uid) {
         for(ChatSession session : sessions) {
-            if(session)
+            if(session.getInfo() != null && session.getInfo().account().equals(uid)) {
+                return session;
+            }
         }
+        return null;
     }
 
     public void broadcast(UUID sender, BaseText text) {
-        sessions.forEach(session -> {
-            if(session.getState() == ConnectionState.ESTABLISHED) {
-                session.pushMessage(sender, text);
-            }
-        });
+        sessions.forEach(session -> session.pushMessage(sender, text));
     }
 
     public WebChat getWebChat() {
         return webChat;
+    }
+
+    public void terminate() {
+
     }
 }
