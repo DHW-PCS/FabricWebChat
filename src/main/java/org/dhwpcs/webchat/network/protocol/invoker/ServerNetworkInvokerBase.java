@@ -9,9 +9,4 @@ public abstract class ServerNetworkInvokerBase implements ServerNetworkInvoker {
         this.connection = connection;
         return this;
     }
-
-    @Override
-    public ClientConnection getConnection() {
-        return connection;
-    }
 }

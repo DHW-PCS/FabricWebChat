@@ -4,7 +4,7 @@ import com.google.gson.JsonObject;
 import org.dhwpcs.webchat.network.exception.NetworkException;
 import org.dhwpcs.webchat.network.protocol.packet.OutboundPacket;
 
-public class ClientboundPacketSendResult implements OutboundPacket {
+public class CPacketLogoutSuccess implements OutboundPacket {
     @Override
     public void serialize(JsonObject payload) throws NetworkException {}
 }

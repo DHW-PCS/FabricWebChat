@@ -1,57 +1,46 @@
 package org.dhwpcs.webchat.session;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 import org.dhwpcs.webchat.network.protocol.Protocol;
-import org.dhwpcs.webchat.network.protocol.invoker.ClientNetworkInvoker;
 import org.dhwpcs.webchat.network.protocol.invoker.ServerNetworkInvoker;
 import org.dhwpcs.webchat.network.protocol.packet.InboundPacket;
 import org.dhwpcs.webchat.network.protocol.packet.OutboundPacket;
+import org.dhwpcs.webchat.task.SimpleTaskHandler;
+import org.dhwpcs.webchat.task.TaskHandler;
 
 public class ClientConnection extends SimpleChannelInboundHandler<InboundPacket> {
     private ChatSession session;
     private Channel channel;
     private ConnectionState state;
-    private ClientNetworkInvoker client;
     private ServerNetworkInvoker server;
+    private TaskHandler tasks;
+    private final ConnectionInvoker invoker = new ConnectionInvoker(this);
 
     public void setProtocol(Protocol proto) {
-        client = proto.createClientInvoker(this);
+        tasks = new SimpleTaskHandler();
         server = proto.createServerInvoker(this);
     }
 
     @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+    public void channelActive(ChannelHandlerContext ctx) {
         channel = ctx.channel();
     }
 
     @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+    public void channelInactive(ChannelHandlerContext ctx) {
         channel = null;
     }
 
-    public void sendPacket(OutboundPacket packet, GenericFutureListener<? extends Future<? super Void>> listener) {
-        channel.writeAndFlush(packet).addListener(listener);
-    }
-
-    public void sendPacket(OutboundPacket packet) {
-        channel.writeAndFlush(packet);
+    public ChannelFuture sendPacket(OutboundPacket packet) {
+        return channel.writeAndFlush(packet);
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, InboundPacket inbound) throws Exception {
-        inbound.handle(client);
-    }
-
-    public ConnectionState getState() {
-        return state;
-    }
-
-    public void setState(ConnectionState state) {
-        this.state = state;
+    protected void channelRead0(ChannelHandlerContext ctx, InboundPacket inbound) {
+        inbound.handle(this);
     }
 
     public ChatSession getSession() {
@@ -68,5 +57,13 @@ public class ClientConnection extends SimpleChannelInboundHandler<InboundPacket>
 
     public Channel getChannel() {
         return channel;
+    }
+
+    public TaskHandler getTaskHandler() {
+        return tasks;
+    }
+
+    public ConnectionInvoker getInvoker() {
+        return invoker;
     }
 }

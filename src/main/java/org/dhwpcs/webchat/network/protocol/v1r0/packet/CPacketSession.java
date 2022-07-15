@@ -1,21 +1,21 @@
 package org.dhwpcs.webchat.network.protocol.v1r0.packet;
 
 import com.google.gson.JsonObject;
+import org.dhwpcs.webchat.data.AccountInfo;
 import org.dhwpcs.webchat.network.exception.NetworkException;
 import org.dhwpcs.webchat.network.protocol.packet.OutboundPacket;
 
-import java.util.UUID;
+public class CPacketSession implements OutboundPacket {
 
-public class ClientboundPacketSessionInfo implements OutboundPacket {
+    private final AccountInfo info;
 
-    private final UUID uuid;
-
-    public ClientboundPacketSessionInfo(UUID uuid) {
-        this.uuid = uuid;
+    public CPacketSession(AccountInfo info) {
+        this.info = info;
     }
 
     @Override
     public void serialize(JsonObject payload) throws NetworkException {
-        payload.addProperty("uuid", uuid.toString());
+        payload.addProperty("uuid", info.uid().toString());
+        payload.addProperty("name", info.name());
     }
 }

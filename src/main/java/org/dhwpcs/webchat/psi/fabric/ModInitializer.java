@@ -1,14 +1,16 @@
-package org.dhwpcs.webchat.fabric;
+package org.dhwpcs.webchat.psi.fabric;
 
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.minecraft.server.MinecraftServer;
+import org.dhwpcs.webchat.WebChat;
 
 public class ModInitializer implements DedicatedServerModInitializer {
     @Override
     public void onInitializeServer() {
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
-            server.getPlayerManager().createPlayer()
+            WebChat.initialize(server, FabricGameApi.initialize(server));
         });
+
+        ServerLifecycleEvents.SERVER_STOPPING.register(WebChat::stop);
     }
 }

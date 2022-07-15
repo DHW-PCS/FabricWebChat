@@ -1,6 +1,7 @@
 package org.dhwpcs.webchat.network;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
@@ -22,7 +23,8 @@ public class PacketCodec extends MessageToMessageCodec<WebSocketFrame, Packet> {
     @Override
     protected void encode(ChannelHandlerContext ctx, Packet packet, List<Object> list) throws Exception {
         if(packet instanceof OutboundPacket outbound) {
-
+            JsonObject payload = new JsonObject();
+            list.add(protocol.serialize(outbound).toString());
         }
     }
 

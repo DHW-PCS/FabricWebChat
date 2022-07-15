@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "id": "modid",
+  "id": "webchat",
   "version": "${version}",
 
-  "name": "Example Mod",
-  "description": "This is an example description! Tell everyone what your mod is about!",
+  "name": "Webchat",
+  "description": "In-game chat interaction through web!",
   "authors": [
-    "Me!"
+    "InitAuther97"
   ],
   "contact": {
     "homepage": "https://fabricmc.net/",
@@ -14,16 +14,16 @@
   },
 
   "license": "CC0-1.0",
-  "icon": "assets/modid/icon.png",
+  "icon": "assets/webchat/icon.png",
 
   "environment": "*",
   "entrypoints": {
     "main": [
-      "net.fabricmc.example.ExampleMod"
+      "org.dhwpcs.webchat.psi.fabric.ModInitializer"
     ]
   },
   "mixins": [
-    "modid.mixins.json"
+    "webchat.mixins.json"
   ],
 
   "depends": {
