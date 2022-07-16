@@ -1,10 +1,12 @@
 package org.dhwpcs.webchat.task;
 
+import org.dhwpcs.webchat.util.Tickable;
+
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-public interface TaskHandler {
+public interface TaskHandler extends Tickable {
     boolean registerSingleton(Task task);
     <T extends Task> Optional<T> querySingleton(Class<T> tsk);
 

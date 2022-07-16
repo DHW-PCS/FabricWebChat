@@ -6,6 +6,7 @@ import net.minecraft.text.Text;
 import org.dhwpcs.webchat.data.AccountInfo;
 import org.dhwpcs.webchat.server.ChatListener;
 import org.dhwpcs.webchat.server.GameServerApi;
+import org.dhwpcs.webchat.util.Tickable;
 
 public class FabricGameApi implements GameServerApi {
 
@@ -27,10 +28,8 @@ public class FabricGameApi implements GameServerApi {
     }
 
     @Override
-    public void registerTickRunnable(Runnable runnable) {
-        ServerTickEvents.END_SERVER_TICK.register(it -> {
-            it.execute(runnable);
-        });
+    public void registerTickable(Tickable runnable) {
+        ServerTickEvents.END_SERVER_TICK.register(it -> it.execute(runnable::tick));
     }
 
     public static GameServerApi initialize(MinecraftServer server) {

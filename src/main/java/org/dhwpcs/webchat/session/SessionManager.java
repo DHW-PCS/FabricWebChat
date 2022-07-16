@@ -4,12 +4,13 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.text.Text;
 import org.dhwpcs.webchat.data.AccountInfo;
+import org.dhwpcs.webchat.util.Tickable;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-public class SessionManager {
+public class SessionManager implements Tickable {
     private final Set<ChatSession> sessions = new HashSet<>();
     private final Object2IntMap<ChatSession> countdown = new Object2IntOpenHashMap<>();
 
@@ -48,7 +49,9 @@ public class SessionManager {
     }
 
     public void broadcast(UUID sender, Text text) {
-        sessions.forEach(session -> session.pushMessage(sender, text));
+        sessions.forEach(session -> {
+            if(!session.isDead()) session.pushMessage(sender, text);
+        });
     }
 
     public void terminate() {
@@ -63,7 +66,7 @@ public class SessionManager {
         countdown.put(session, 5*60*20);
     }
 
-    public void update() {
+    public void tick() {
         for(ChatSession session : sessions) {
             if(countdown.containsKey(session)) {
                 int res = countdown.getInt(session);

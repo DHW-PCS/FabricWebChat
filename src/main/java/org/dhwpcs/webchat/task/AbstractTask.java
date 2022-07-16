@@ -1,7 +1,5 @@
 package org.dhwpcs.webchat.task;
 
-import org.dhwpcs.webchat.session.ConnectionInvoker;
-
 public abstract class AbstractTask implements Task {
 
     protected boolean done = false;

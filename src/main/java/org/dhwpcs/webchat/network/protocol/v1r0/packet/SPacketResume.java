@@ -4,7 +4,7 @@ import com.google.gson.JsonObject;
 import org.dhwpcs.webchat.WebChat;
 import org.dhwpcs.webchat.network.protocol.packet.InboundPacket;
 import org.dhwpcs.webchat.session.ChatSession;
-import org.dhwpcs.webchat.session.ClientConnection;
+import org.dhwpcs.webchat.network.connection.ClientConnection;
 import org.dhwpcs.webchat.session.ResumeFailedReason;
 
 import java.util.UUID;
@@ -26,7 +26,7 @@ public class SPacketResume implements InboundPacket {
                 connection.sendPacket(new CPacketResumeFailed(ResumeFailedReason.SESSION_EXPIRED));
             } else if(chatSession.isKeeping()) {
                 chatSession.connect(connection);
-                chatSession.sendInfo();
+                connection.sendPacket(new CPacketResumeSuccess());
             } else if(chatSession.isAlive()) {
                 connection.sendPacket(new CPacketResumeFailed(ResumeFailedReason.SESSION_OCCUPIED));
             }

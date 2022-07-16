@@ -1,4 +1,4 @@
-package org.dhwpcs.webchat.session;
+package org.dhwpcs.webchat.network.connection;
 
 import io.netty.channel.ChannelFuture;
 import org.dhwpcs.webchat.network.protocol.packet.OutboundPacket;

@@ -10,16 +10,29 @@ import org.dhwpcs.webchat.network.protocol.packet.Packet;
 import org.dhwpcs.webchat.network.protocol.ProtocolBase;
 import org.dhwpcs.webchat.network.protocol.v1r0.invoker.ServerInvokerV1R0;
 import org.dhwpcs.webchat.network.protocol.v1r0.packet.*;
-import org.dhwpcs.webchat.session.ClientConnection;
+import org.dhwpcs.webchat.network.connection.ClientConnection;
 
 public class ProtocolV1R0 extends ProtocolBase {
 
     public ProtocolV1R0() {
-        register("lifecycle/login", SPacketLogin.class, SPacketLogin::new);
-        register("lifecycle/login_confirm", SPacketLoginConfirm.class, SPacketLoginConfirm::new);
-        register("chat/send", SPacketSend.class, SPacketSend::new);
-        register("lifecycle/resume", SPacketResume.class, SPacketResume::new);
-        register("lifecycle/logout", SPacketLogout.class, SPacketLogout::new);
+        registerInbound("lifecycle/login", SPacketLogin.class, SPacketLogin::new);
+        registerInbound("lifecycle/login_confirm", SPacketLoginConfirm.class, SPacketLoginConfirm::new);
+        registerInbound("chat/send", SPacketSend.class, SPacketSend::new);
+        registerInbound("lifecycle/resume", SPacketResume.class, SPacketResume::new);
+        registerInbound("lifecycle/logout", SPacketLogout.class, SPacketLogout::new);
+        registerInbound("lifecycle/login_cancel", SPacketLoginCancel.class, SPacketLoginCancel::new);
+
+        registerOutbound("lifecycle/halt", CPacketHalt.class);
+        registerOutbound("lifecycle/login/failed", CPacketLoginFailed.class);
+        registerOutbound("lifecycle/login/success", CPacketLoginSuccess.class);
+        registerOutbound("lifecycle/logout/failed", CPacketLogoutFailed.class);
+        registerOutbound("lifecycle/logout/success", CPacketLogoutSuccess.class);
+        registerOutbound("lifecycle/resume/failed", CPacketResumeFailed.class);
+        registerOutbound("lifecycle/resume/success", CPacketResumeSuccess.class);
+        registerOutbound("chat/recv", CPacketMessage.class);
+        registerOutbound("chat/send/failed", CPacketSendFailed.class);
+        registerOutbound("chat/send/success", CPacketSendSuccess.class);
+        registerOutbound("lifecycle/session_confirm", CPacketSession.class);
     }
 
     @Override

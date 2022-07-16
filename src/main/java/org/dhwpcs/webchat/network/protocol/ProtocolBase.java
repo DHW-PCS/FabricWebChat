@@ -8,16 +8,33 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 public abstract class ProtocolBase implements Protocol {
+
+    private static final Supplier<?> UNSUPPORTED = () -> {
+        throw new UnsupportedOperationException();
+    };
+
+    public static final<T> Supplier<T> unsupportedSupplier() {
+        return (Supplier<T>) UNSUPPORTED;
+    }
+
     public ProtocolBase(){}
 
     private Map<String, PacketType<?>> packetRegistry = new HashMap<>();
 
-    protected<T extends Packet> void register(String id, Class<T> packet, Supplier<T> factory) {
+    protected<T extends Packet> void registerInbound(String id, Class<T> packet, Supplier<T> factory) {
         packetRegistry.putIfAbsent(id, new PacketType<>(packet, factory));
     }
 
-    protected<T extends Packet> void replace(String id, Class<T> packet, Supplier<T> factory) {
+    protected<T extends Packet> void replaceInbound(String id, Class<T> packet, Supplier<T> factory) {
         packetRegistry.replace(id, new PacketType<>(packet, factory));
+    }
+
+    protected<T extends Packet> void registerOutbound(String id, Class<T> packet) {
+        packetRegistry.putIfAbsent(id, new PacketType<>(packet, unsupportedSupplier()));
+    }
+
+    protected<T extends Packet> void replaceOutbound(String id, Class<T> packet) {
+        packetRegistry.replace(id, new PacketType<>(packet, unsupportedSupplier()));
     }
 
     protected<T extends Packet> void unregister(String id) {

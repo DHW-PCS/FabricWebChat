@@ -49,4 +49,13 @@ public class SimpleTaskHandler implements TaskHandler {
     public void shutdown() {
         entries.values().forEach(Task::cancel);
     }
+
+    @Override
+    public void tick() {
+        for(Object key : entries.keySet()) {
+            if(entries.get(key).isDone()) {
+                entries.remove(key);
+            }
+        }
+    }
 }

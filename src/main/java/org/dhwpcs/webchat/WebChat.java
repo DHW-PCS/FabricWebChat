@@ -10,8 +10,10 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollServerSocketChannel;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.WebSocketFrameAggregator;
@@ -25,20 +27,24 @@ import org.dhwpcs.webchat.data.AccountInfo;
 import org.dhwpcs.webchat.data.AccountInfoSerde;
 import org.dhwpcs.webchat.network.Handshaker;
 import org.dhwpcs.webchat.network.PacketCodec;
+import org.dhwpcs.webchat.network.connection.ConnectionManager;
 import org.dhwpcs.webchat.server.ChatListener;
 import org.dhwpcs.webchat.server.GameServerApi;
-import org.dhwpcs.webchat.session.ClientConnection;
+import org.dhwpcs.webchat.network.connection.ClientConnection;
 import org.dhwpcs.webchat.session.SessionManager;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class WebChat {
 
@@ -48,13 +54,21 @@ public class WebChat {
             .registerTypeAdapter(AccountInfo.class, new AccountInfoSerde())
             .create();
 
+    private static final AtomicInteger bossCount = new AtomicInteger(0);
+    private static final AtomicInteger childCount = new AtomicInteger(0);
+
+    public static final ThreadFactory BOSS = r -> new Thread(r, "WebChat-Netty-BossGroup-"+bossCount.getAndIncrement());
+    public static final ThreadFactory CHILD = r -> new Thread(r, "WebChat-Netty-WorkerGroup-"+childCount.getAndIncrement());
+    public static final ThreadFactory EVENT_LOOP = r -> new Thread(r, "WebChat-EventExecutor");
+
     private final MinecraftServer mcServer;
 
     private boolean available = false;
     private Channel httpServer;
 
     private final SessionManager sessions = new SessionManager();
-    private final ScheduledExecutorService asyncSingle = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "WebChat Worker Thread"));
+    private final ConnectionManager connections = new ConnectionManager();
+    private final ScheduledExecutorService asyncSingle = Executors.newSingleThreadScheduledExecutor(EVENT_LOOP);
 
     private GameServerApi gameServerApi;
     private Future<Map<String, AccountInfo>> userRegistry;
@@ -67,7 +81,8 @@ public class WebChat {
         INSTANCE = new WebChat(server);
         INSTANCE.start();
         prod.registerChatListener(new WebchatChatListener(INSTANCE));
-        prod.registerTickRunnable(INSTANCE.sessions::update);
+        prod.registerTickable(INSTANCE.sessions);
+        prod.registerTickable(INSTANCE.connections);
         INSTANCE.gameServerApi = prod;
     }
 
@@ -79,11 +94,14 @@ public class WebChat {
             channelClass = NioServerSocketChannel.class;
         }
 
-        this.httpServer = new ServerBootstrap().channel(channelClass).childHandler(new ChannelInitializer<ServerSocketChannel>() {
+        this.httpServer = new ServerBootstrap()
+                .group(new NioEventLoopGroup(BOSS), new NioEventLoopGroup(CHILD))
+                .channel(channelClass)
+                .childHandler(new ChannelInitializer<NioSocketChannel>() {
             @Override
-            protected void initChannel(ServerSocketChannel channel) throws Exception {
+            protected void initChannel(NioSocketChannel channel) {
                 ChannelPipeline pipeline = channel.pipeline();
-                ClientConnection connection = new ClientConnection();
+                ClientConnection connection = connections.createConnection();
                 PacketCodec codec = new PacketCodec();
                 Handshaker handshaker = new Handshaker(codec, connection);
                 pipeline.addLast("http-codec", new HttpServerCodec());
@@ -99,10 +117,16 @@ public class WebChat {
         }).bind(80).syncUninterruptibly().channel();
         userRegistry = asyncSingle.submit(() -> {
             Path pth = mcServer.getFile("webchat_registries.json").toPath();
-            try (BufferedReader registries = Files.newBufferedReader(pth)) {
-                return GSON.fromJson(registries, new TypeToken<Map<String, AccountInfo>>(){}.getType());
-            } catch (IOException e) {
-                throw new RuntimeException("Could not read user registries!", e);
+            if(!Files.exists(pth)) {
+                Files.writeString(pth, "{}");
+                return new HashMap<>();
+            } else {
+                try (BufferedReader registries = Files.newBufferedReader(pth)) {
+                    return GSON.fromJson(registries, new TypeToken<Map<String, AccountInfo>>() {
+                    }.getType());
+                } catch (IOException e) {
+                    throw new RuntimeException("Could not read user registries!", e);
+                }
             }
         });
         available = true;
@@ -114,11 +138,7 @@ public class WebChat {
         } else {
             Preconditions.checkState(INSTANCE.available);
             INSTANCE.sessions.terminate();
-            try {
-                INSTANCE.httpServer.close().sync();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+            INSTANCE.httpServer.close();
             INSTANCE.available = false;
         }
     }
@@ -129,6 +149,10 @@ public class WebChat {
 
     public Future<Map<String, AccountInfo>> getUserRegistry() {
         return userRegistry;
+    }
+
+    public GameServerApi getGame() {
+        return gameServerApi;
     }
 
     static class WebchatChatListener implements ChatListener {

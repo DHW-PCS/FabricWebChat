@@ -23,14 +23,12 @@ public class Validator {
             if($.has("protocol")) {
                 String version = $.getAsJsonPrimitive("protocol").getAsString();
                 Supplier<Protocol> sup = supported.get(version);
-                if(sup == null) {
-                    return null;
-                } else {
+                if(sup != null) {
                     return sup.get();
                 }
             }
         }
-        throw new IllegalArgumentException();
+        return null;
     }
 
     public static Validator create() {

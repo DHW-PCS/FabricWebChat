@@ -23,8 +23,7 @@ public class PacketCodec extends MessageToMessageCodec<WebSocketFrame, Packet> {
     @Override
     protected void encode(ChannelHandlerContext ctx, Packet packet, List<Object> list) throws Exception {
         if(packet instanceof OutboundPacket outbound) {
-            JsonObject payload = new JsonObject();
-            list.add(protocol.serialize(outbound).toString());
+            list.add(new TextWebSocketFrame(protocol.serialize(outbound).toString()));
         }
     }
 

@@ -3,6 +3,7 @@ package org.dhwpcs.webchat.session;
 import io.netty.channel.ChannelFuture;
 import net.minecraft.text.Text;
 import org.dhwpcs.webchat.data.AccountInfo;
+import org.dhwpcs.webchat.network.connection.ClientConnection;
 
 import java.util.Deque;
 import java.util.LinkedList;
@@ -22,13 +23,15 @@ public class ChatSession {
     }
 
     public void sendInfo() {
-        if(connection != null) {
+        if(!isDead()) {
             actions.add(() -> connection.serverInvoker().sendInfo(info));
-        } else throw new IllegalStateException("Not connected");
+        }
     }
 
     public void pushMessage(UUID sender, Text text) {
-        actions.addLast(() -> connection.serverInvoker().pushMessage(sender, text));
+        if(!isDead()){
+            actions.addLast(() -> connection.serverInvoker().pushMessage(sender, text));
+        }
     }
 
     public void connect(ClientConnection connection) {
@@ -42,13 +45,12 @@ public class ChatSession {
     }
 
     public void executeQueuedActions() {
-        for(Supplier<ChannelFuture> element : actions) {
-            ChannelFuture future = element.get();
-            future.addListener(it -> {
-                if(!it.isSuccess()) {
-                    actions.add(element);
+        if(isAlive()) {
+            actions.forEach(it1 -> it1.get().addListener(it2 -> {
+                if(!it2.isSuccess()) {
+                    actions.add(it1);
                 }
-            });
+            }));
         }
     }
 
@@ -58,6 +60,7 @@ public class ChatSession {
     public void halt() {
         this.connection = null;
         this.info = null;
+        actions.clear();
     }
 
     /**
@@ -78,6 +81,7 @@ public class ChatSession {
     public void logout() {
         this.connection = null;
         this.info = null;
+        actions.clear();
     }
 
     /**
@@ -85,6 +89,7 @@ public class ChatSession {
      */
     public void discardCd() {
         this.info = null;
+        actions.clear();
     }
 
     public AccountInfo getInfo() {

@@ -4,15 +4,15 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketCloseStatus;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import org.dhwpcs.webchat.network.protocol.Protocol;
-import org.dhwpcs.webchat.session.ClientConnection;
+import org.dhwpcs.webchat.network.connection.ClientConnection;
 
-public class Handshaker extends SimpleChannelInboundHandler<WebSocketFrame> {
+public class Handshaker extends ChannelInboundHandlerAdapter {
 
     private final PacketCodec codec;
     private final ClientConnection connection;
@@ -26,19 +26,30 @@ public class Handshaker extends SimpleChannelInboundHandler<WebSocketFrame> {
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, WebSocketFrame frame) {
+    public void channelRead(ChannelHandlerContext ctx, Object frame) {
+        if(!(frame instanceof WebSocketFrame)) {
+            throw new IllegalArgumentException();
+        }
         if(!established) {
-            if(frame instanceof TextWebSocketFrame txt) {
-                String json = txt.text();
-                JsonElement element = JsonParser.parseString(json);
-                protocol = validator.validate(element);
-                if(protocol == null) {
-                    ctx.writeAndFlush(new CloseWebSocketFrame(WebSocketCloseStatus.ABNORMAL_CLOSURE,
-                            "UnsupportedProtocolVersion"))
-                            .addListener(ChannelFutureListener.CLOSE);
+            try {
+                if (frame instanceof TextWebSocketFrame txt) {
+                    String json = txt.text();
+                    JsonElement element = JsonParser.parseString(json);
+                    protocol = validator.validate(element);
+                    if (protocol == null) {
+                        ctx.writeAndFlush(new CloseWebSocketFrame(WebSocketCloseStatus.ABNORMAL_CLOSURE,
+                                        "UnsupportedProtocolVersion"))
+                                .addListener(ChannelFutureListener.CLOSE);
+                    }
+                    ctx.writeAndFlush(new TextWebSocketFrame(protocol.onHandshakeSuccess().toString()));
+                    codec.setProtocol(protocol);
+                    connection.setProtocol(protocol);
+                    established = true;
+                } else {
+                    ctx.writeAndFlush(new TextWebSocketFrame(protocol.onHandshakeFailed("TextWebSocketFrame is required.").toString()));
                 }
-                ctx.writeAndFlush(new TextWebSocketFrame(protocol.onHandshakeSuccess().toString()));
-                established = true;
+            } catch (Exception ex) {
+                ctx.writeAndFlush(new TextWebSocketFrame(protocol.onHandshakeFailed(ex.getMessage()).toString()));
             }
         } else {
             ctx.fireChannelRead(frame);

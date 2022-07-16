@@ -6,7 +6,7 @@ import org.dhwpcs.webchat.network.exception.NetworkException;
 import org.dhwpcs.webchat.network.protocol.invoker.ServerNetworkInvoker;
 import org.dhwpcs.webchat.network.protocol.packet.InboundPacket;
 import org.dhwpcs.webchat.network.protocol.packet.OutboundPacket;
-import org.dhwpcs.webchat.session.ClientConnection;
+import org.dhwpcs.webchat.network.connection.ClientConnection;
 
 public interface Protocol {
 
@@ -18,6 +18,13 @@ public interface Protocol {
     default JsonElement onHandshakeSuccess() {
         JsonObject $ = new JsonObject();
         $.addProperty("handshake", "success");
+        return $;
+    }
+
+    default JsonElement onHandshakeFailed(String reason) {
+        JsonObject $ = new JsonObject();
+        $.addProperty("handshake", "failed");
+        $.addProperty("reason", reason);
         return $;
     }
 }

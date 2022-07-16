@@ -3,7 +3,7 @@ package org.dhwpcs.webchat.network.protocol.v1r0.packet;
 import com.google.gson.JsonObject;
 import org.dhwpcs.webchat.network.exception.NetworkException;
 import org.dhwpcs.webchat.network.protocol.packet.InboundPacket;
-import org.dhwpcs.webchat.session.ClientConnection;
+import org.dhwpcs.webchat.network.connection.ClientConnection;
 import org.dhwpcs.webchat.network.protocol.v1r0.tasks.LoginTask;
 import org.dhwpcs.webchat.session.LoginFailedReason;
 

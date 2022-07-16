@@ -18,7 +18,7 @@
 
   "environment": "*",
   "entrypoints": {
-    "main": [
+    "server": [
       "org.dhwpcs.webchat.psi.fabric.ModInitializer"
     ]
   },

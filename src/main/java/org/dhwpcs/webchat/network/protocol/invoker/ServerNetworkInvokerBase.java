@@ -1,6 +1,6 @@
 package org.dhwpcs.webchat.network.protocol.invoker;
 
-import org.dhwpcs.webchat.session.ClientConnection;
+import org.dhwpcs.webchat.network.connection.ClientConnection;
 
 public abstract class ServerNetworkInvokerBase implements ServerNetworkInvoker {
     protected ClientConnection connection;
