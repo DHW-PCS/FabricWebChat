@@ -1,7 +1,7 @@
 package org.dhwpcs.webchat.network.protocol.v1r0.packet;
 
 import com.google.gson.JsonObject;
-import org.dhwpcs.webchat.data.AccountInfo;
+import org.dhwpcs.webchat.server.data.AccountInfo;
 import org.dhwpcs.webchat.network.exception.NetworkException;
 import org.dhwpcs.webchat.network.protocol.packet.OutboundPacket;
 

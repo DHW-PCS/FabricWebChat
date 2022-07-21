@@ -27,6 +27,7 @@ public class Handshaker extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object frame) {
+        System.out.println(frame);
         if(!(frame instanceof WebSocketFrame)) {
             throw new IllegalArgumentException();
         }

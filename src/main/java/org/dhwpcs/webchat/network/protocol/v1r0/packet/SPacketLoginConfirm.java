@@ -4,9 +4,9 @@ import com.google.gson.JsonObject;
 import org.dhwpcs.webchat.network.protocol.packet.InboundPacket;
 import org.dhwpcs.webchat.network.protocol.v1r0.tasks.LoginState;
 import org.dhwpcs.webchat.network.protocol.v1r0.tasks.LoginTask;
-import org.dhwpcs.webchat.session.ChatSession;
+import org.dhwpcs.webchat.server.session.ChatSession;
 import org.dhwpcs.webchat.network.connection.ClientConnection;
-import org.dhwpcs.webchat.session.LoginFailedReason;
+import org.dhwpcs.webchat.server.session.LoginFailedReason;
 
 import java.util.Optional;
 

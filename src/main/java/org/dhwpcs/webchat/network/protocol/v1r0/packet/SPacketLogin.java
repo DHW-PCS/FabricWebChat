@@ -5,7 +5,7 @@ import org.dhwpcs.webchat.network.exception.NetworkException;
 import org.dhwpcs.webchat.network.protocol.packet.InboundPacket;
 import org.dhwpcs.webchat.network.connection.ClientConnection;
 import org.dhwpcs.webchat.network.protocol.v1r0.tasks.LoginTask;
-import org.dhwpcs.webchat.session.LoginFailedReason;
+import org.dhwpcs.webchat.server.session.LoginFailedReason;
 
 public class SPacketLogin implements InboundPacket {
 
@@ -25,12 +25,15 @@ public class SPacketLogin implements InboundPacket {
             return;
         }
         LoginTask tsk = new LoginTask();
-        if(!connection.getTaskHandler().registerSingleton(tsk)) {
+        if(!tsk.available(connection)) {
+            connection.sendPacket(new CPacketLoginFailed(LoginFailedReason.ALREADY_LOGGED_IN));
+        } else if(!connection.getTaskHandler().registerSingleton(tsk)) {
             connection.sendPacket(new CPacketLoginFailed(LoginFailedReason.ALREADY_LOGGING_IN));
-        }
-        switch (tsk.account(account, password)) {
-            case WRONG_PASSWORD_OR_ACCOUNT -> connection.sendPacket(new CPacketLoginFailed(LoginFailedReason.WRONG_ACCOUNT_OR_PASSWORD));
-            case SUCCESS -> connection.sendPacket(new CPacketSession(tsk.getAccountInfo()));
+        } else {
+            switch (tsk.account(account, password)) {
+                case WRONG_PASSWORD_OR_ACCOUNT -> connection.sendPacket(new CPacketLoginFailed(LoginFailedReason.WRONG_ACCOUNT_OR_PASSWORD));
+                case SUCCESS -> connection.sendPacket(new CPacketSession(tsk.getAccountInfo()));
+            }
         }
     }
 

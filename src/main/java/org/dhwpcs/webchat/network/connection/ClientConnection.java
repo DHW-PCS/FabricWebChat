@@ -8,9 +8,9 @@ import org.dhwpcs.webchat.network.protocol.Protocol;
 import org.dhwpcs.webchat.network.protocol.invoker.ServerNetworkInvoker;
 import org.dhwpcs.webchat.network.protocol.packet.InboundPacket;
 import org.dhwpcs.webchat.network.protocol.packet.OutboundPacket;
-import org.dhwpcs.webchat.session.ChatSession;
-import org.dhwpcs.webchat.task.SimpleTaskHandler;
-import org.dhwpcs.webchat.task.TaskHandler;
+import org.dhwpcs.webchat.server.session.ChatSession;
+import org.dhwpcs.webchat.server.task.SimpleTaskHandler;
+import org.dhwpcs.webchat.server.task.TaskHandler;
 import org.dhwpcs.webchat.util.Tickable;
 
 public class ClientConnection extends SimpleChannelInboundHandler<InboundPacket> implements Tickable {
@@ -35,7 +35,9 @@ public class ClientConnection extends SimpleChannelInboundHandler<InboundPacket>
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
         tickable = false;
-        tasks.shutdown();
+        if(tasks != null) {
+            tasks.shutdown();
+        }
         channel = null;
         session = null;
     }
@@ -75,9 +77,7 @@ public class ClientConnection extends SimpleChannelInboundHandler<InboundPacket>
 
     public void tick() {
         if(tickable) {
-            if (channel.eventLoop().inEventLoop()) {
-                tasks.tick();
-            } else channel.eventLoop().execute(tasks::tick);
+            tasks.tick();
         }
     }
 }

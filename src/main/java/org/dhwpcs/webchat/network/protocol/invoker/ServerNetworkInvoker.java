@@ -2,8 +2,8 @@ package org.dhwpcs.webchat.network.protocol.invoker;
 
 import io.netty.channel.ChannelFuture;
 import net.minecraft.text.Text;
-import org.dhwpcs.webchat.data.AccountInfo;
-import org.dhwpcs.webchat.session.DisconnectReason;
+import org.dhwpcs.webchat.server.data.AccountInfo;
+import org.dhwpcs.webchat.server.session.DisconnectReason;
 
 import java.util.UUID;
 

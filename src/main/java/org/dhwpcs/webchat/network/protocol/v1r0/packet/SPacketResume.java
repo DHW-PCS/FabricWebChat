@@ -1,11 +1,11 @@
 package org.dhwpcs.webchat.network.protocol.v1r0.packet;
 
 import com.google.gson.JsonObject;
-import org.dhwpcs.webchat.WebChat;
+import org.dhwpcs.webchat.server.WebChatServer;
 import org.dhwpcs.webchat.network.protocol.packet.InboundPacket;
-import org.dhwpcs.webchat.session.ChatSession;
+import org.dhwpcs.webchat.server.session.ChatSession;
 import org.dhwpcs.webchat.network.connection.ClientConnection;
-import org.dhwpcs.webchat.session.ResumeFailedReason;
+import org.dhwpcs.webchat.server.session.ResumeFailedReason;
 
 import java.util.UUID;
 
@@ -21,7 +21,7 @@ public class SPacketResume implements InboundPacket {
     @Override
     public void handle(ClientConnection connection) {
         if(session != null) {
-            ChatSession chatSession = WebChat.INSTANCE.getSessions().acquireSession(session);
+            ChatSession chatSession = WebChatServer.INSTANCE.getSessions().acquireSession(session);
             if(chatSession == null || chatSession.isDead()) {
                 connection.sendPacket(new CPacketResumeFailed(ResumeFailedReason.SESSION_EXPIRED));
             } else if(chatSession.isKeeping()) {
